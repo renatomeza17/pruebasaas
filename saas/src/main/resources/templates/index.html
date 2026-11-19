@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>SAP Pulse | Incidencias</title>
+    <link rel="stylesheet" th:href="@{/styles.css}">
+</head>
+<body>
+<header class="cabecera">
+    <div class="contenedor barra">
+        <a class="marca" th:href="@{/}">SAP Pulse</a>
+        <nav aria-label="Navegación principal">
+            <a href="#nueva">Registrar incidencia</a>
+            <a href="#listado">Ver incidencias</a>
+        </nav>
+    </div>
+</header>
+<main class="contenedor">
+    <h1>Incidencias de integraciones SAP</h1>
+    <p class="subtitulo">Registra el impacto de cada falla y actualiza su estado durante la atención.</p>
+
+    <p class="aviso error" role="alert" th:if="${error}" th:text="${error}"></p>
+
+    <section class="panel" aria-labelledby="nueva">
+        <h2 id="nueva">Registrar incidencia</h2>
+        <form class="registro" method="post" th:action="@{/incidencias}">
+            <label>Título
+                <input name="titulo" maxlength="120" required th:value="${titulo}" placeholder="Pedido no llegó a SAP">
+            </label>
+            <label>Integración
+                <input name="integracion" maxlength="120" required th:value="${integracion}" placeholder="E-commerce → SAP">
+            </label>
+            <label>Criticidad
+                <select name="criticidad" required>
+                    <option th:each="nivel : ${criticidades}" th:value="${nivel.name()}"
+                            th:text="${nivel.etiqueta}"
+                            th:selected="${criticidadElegida == null ? nivel.name() == 'MEDIA' : nivel == criticidadElegida}"></option>
+                </select>
+            </label>
+            <label class="ancho">Impacto
+                <textarea name="impacto" rows="3" maxlength="1000" required th:text="${impacto}"></textarea>
+            </label>
+            <div class="ancho"><button type="submit">Registrar incidencia</button></div>
+        </form>
+    </section>
+
+    <section class="panel" aria-labelledby="listado">
+        <div id="resultado" tabindex="-1">
+            <p class="aviso" role="status" th:if="${mensaje}" th:text="${mensaje}"></p>
+        </div>
+        <h2 id="listado">Incidencias registradas</h2>
+        <p class="subtitulo" th:if="${incidencias.isEmpty()}">Todavía no hay incidencias registradas.</p>
+        <div class="tabla" th:unless="${incidencias.isEmpty()}">
+            <table>
+                <thead><tr><th scope="col">Incidencia</th><th scope="col">Integración</th>
+                    <th scope="col">Criticidad</th><th scope="col">Estado</th><th scope="col">Acciones</th></tr></thead>
+                <tbody>
+                <tr th:each="incidencia : ${incidencias}">
+                    <td>
+                        <span class="referencia" th:text="|#${incidencia.id}|"></span>
+                        <strong th:text="${incidencia.titulo}"></strong>
+                        <details class="detalle">
+                            <summary>Ver impacto</summary>
+                            <p class="impacto" th:text="${incidencia.impacto}"></p>
+                        </details>
+                    </td>
+                    <td th:text="${incidencia.integracion}"></td>
+                    <td><span class="criticidad" th:attr="data-nivel=${incidencia.criticidad.name()}"
+                              th:text="${incidencia.criticidad.etiqueta}"></span></td>
+                    <td>
+                        <form class="estado" method="post" th:action="@{/incidencias/{id}/estado(id=${incidencia.id})}">
+                            <select name="estado" th:attr="aria-label=|Estado de ${incidencia.titulo}|">
+                                <option th:each="estado : ${estados}" th:value="${estado.name()}"
+                                        th:text="${estado.etiqueta}" th:selected="${estado == incidencia.estado}"></option>
+                            </select>
+                            <button type="submit" class="secundario">Guardar</button>
+                        </form>
+                    </td>
+                    <td>
+                        <form method="post" th:action="@{/incidencias/{id}/eliminar(id=${incidencia.id})}"
+                              onsubmit="return confirm('¿Eliminar esta incidencia?')">
+                            <button type="submit" class="eliminar"
+                                    th:attr="aria-label=|Eliminar ${incidencia.titulo}|">Eliminar</button>
+                        </form>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+<script>
+    if (window.location.hash === '#resultado' && document.querySelector('#resultado [role="status"]')) {
+        document.querySelector('#resultado').focus({ preventScroll: true });
+    }
+</script>
+</body>
+</html>
